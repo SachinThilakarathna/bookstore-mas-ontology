@@ -35,7 +35,7 @@ An **ontology-based multi-agent bookstore management system** implemented in Pyt
 
 ## Folder Structure
 
-bookstore-mas-ontology/
+BookstoreManagementSystem/
 │
 ├─ ontology.py # Owlready2 ontology
 ├─ model.py # Mesa agents and model
