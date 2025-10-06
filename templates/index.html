@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bookstore MAS</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+
+
+header {
+    background: linear-gradient(135deg, #032243, #023980);
+    color: white;
+    padding-left: 80px;
+    padding-right: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px;
+    font-size: clamp(14px, 1.5vw, 24px);
+}
+
+header button {
+    padding: 6px 15px;
+    border: none;
+    border-radius: 6px;
+    background: #0060DB;
+    color: white;
+    cursor: pointer;
+    font-size: clamp(12px, 1vw, 16px);
+}
+
+header button:hover {
+    background: #02295b;
+}
+
+.summary {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: clamp(12px, 1vw, 16px);
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    flex: 1 1 150px;
+    margin: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.card h2 {
+    color: #054d9a;
+    margin-bottom: 8px;
+    font-size: clamp(14px, 1.2vw, 18px);
+}
+
+
+
+.table-container, .chart-container {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex: 1 1 45%;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: clamp(12px, 0.9vw, 14px);
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background:#032243;
+    color: white;
+}
+
+.low-stock {
+    background: #ffe6e6;
+}
+
+.chart-container canvas {
+    width: 100%;
+    height: auto;
+}
+
+
+@media screen and (min-width: 901px) {
+    .main {
+        flex-direction: row;
+    }
+    .table-container, .chart-container {
+        flex: 1 1 45%;
+    }
+    .chart-container canvas {
+        height: 250px !important;  /* small chart height */
+    }
+    .table-container table {
+        font-size: 14px;
+    }
+    .main {
+    display: flex;
+    justify-content: space-between;
+    gap: 60px;
+    flex-wrap: wrap;
+    /* margin-left: 50px;
+    margin-right: 50px; */
+}
+body {
+    font-family: sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 20px 100px 30px 100px;
+    font-size: clamp(12px, 1.2vw, 18px); /* dynamic font */
+}
+
+
+}
+
+/* Media Queries for small screens */
+@media screen and (max-width: 900px) {
+    .main {
+        flex-direction: column;
+    }
+    .table-container, .chart-container {
+        flex: 1 1 100%;
+        margin-bottom: 20px;
+    }
+    table {
+        font-size: clamp(12px, 1.5vw, 16px);
+    }
+    .card h2 {
+        font-size: clamp(14px, 2vw, 18px);
+    }
+       .chart-container canvas {
+        height: 300px !important;  /* taller charts for readability */
+    }
+    .main {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+body {
+    font-family: sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 20px 50px 20px 50px;
+    font-size: clamp(12px, 1.2vw, 18px); /* dynamic font */
+}
+}
+
+</style>
+
+</head>
+<body>
+
+<header>
+<h2>📚 Bookstore Management System</h2>
+<button onclick="stepSimulation()"> Run Simulation 🔄</button>
+</header>
+
+<section class="summary">
+<div class="card"><h2>📈 Total Books Sold</h2><p style="font-weight: bold;">{{ total_sold }}</p></div>
+<div class="card"><h2>👥 Total Customers</h2><p style="font-weight: bold;">{{ customers|length }}</p></div> 
+<div class="card"><h2>📉 Low Stock Books</h2><p style="font-weight: bold;">{{ low_stock_books|join(', ') }}</p></div>
+<div class="card"><h2>💰 Total Income (Rs)</h2><p style="font-weight: bold;">{{ total_income }}</p></div>
+</section>
+
+<section class="main">
+<div class="table-container">
+<h4>Books Inventory</h4>
+<table>
+<tr><th>Title</th><th>Genre</th><th>Price (Rs)</th><th>Quantity</th></tr>
+{% for book in books %}
+<tr {% if book.quantity < 3 %}class="low-stock"{% endif %}>
+<td>{{ book.title }}</td>
+<td>{{ book.genre }}</td>
+<td>{{ book.price }}</td>
+<td>{{ book.quantity }}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
+<div class="chart-container">
+<h4>📊 Book Stock Chart</h4>
+<canvas id="stockChart"></canvas>
+<h4>📈Sales Income Chart</h4>
+<canvas id="salesChart"></canvas>
+</div>
+</section>
+
+<section class="customers">
+<h4>Customers Purchases</h4>
+<table>
+<tr><th>Name</th><th>Purchased Books</th></tr>
+{% for c in customers %}
+<tr>
+<td>{{ c.name }}</td>
+<td>{{ c.purchased|join(', ') }}</td>
+</tr>
+{% endfor %}
+</table>
+</section>
+
+<script>
+function stepSimulation(){ fetch("/step").then(()=>location.reload()); }
+
+// Stock Chart
+const stockCtx = document.getElementById('stockChart').getContext('2d');
+const stockLabels = [{% for b in books %}'{{ b.title }}',{% endfor %}];
+const stockData = [{% for b in books %}{{ b.quantity }},{% endfor %}];
+new Chart(stockCtx, {
+    type:'bar',
+    data:{labels:stockLabels,datasets:[{label:'Stock',data:stockData,backgroundColor:'#1085FF'}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,stepSize:1}}}
+});
+
+// Sales Income Chart
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+const salesLabels = [{% for b in books %}'{{ b.title }}',{% endfor %}];
+const salesData = [{% for b in books %}{{ b.price * (10 - b.quantity) }},{% endfor %}];
+new Chart(salesCtx, {
+    type:'line',
+    data:{labels:salesLabels,datasets:[{label:'Income',data:salesData,borderColor:'#1085FF',fill:false}]},
+    options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true}}}
+});
+</script>
+
+
+</body>
+</html>
