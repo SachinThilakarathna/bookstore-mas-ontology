@@ -62,6 +62,3 @@ BookstoreManagementSystem/
 MIT License
 
 
-
-
-## Folder Structure
